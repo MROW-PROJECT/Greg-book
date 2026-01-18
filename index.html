@@ -21,7 +21,14 @@
         -webkit-user-select: text;
         user-select: text;
       }
+      /* Allow labels to be selectable by default to avoid focus/selection jumps.
+         Use .no-select on labels where you explicitly want to prevent selection
+         (for example checkbox labels that act as toggles). */
       label {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+      .no-select {
         -webkit-user-select: none;
         user-select: none;
       }
@@ -866,7 +873,7 @@
                 { key: 'agreedDocumentation', text: 'I am responsible for ensuring I have proper travel documentation (passport, visas, ID) for all ports of call.' },
                 { key: 'agreedInsurance', text: 'I understand that travel insurance is recommended but not included in this booking.' }
               ].map(({ key, text }) => (
-                <label key={key} className="flex items-start gap-3 cursor-pointer">
+                <label key={key} className="flex items-start gap-3 cursor-pointer no-select">
                   <input
                     type="checkbox"
                     checked={formData[key]}
@@ -998,33 +1005,35 @@
 
                         <div className="flex items-center gap-4">
                           {formData.roomType && (
-                            <div className="text-right">
-                              <div className="text-sm text-gray-600">Total</div>
-                              <div className="text-2xl font-bold text-blue-600">${calculateTotal().toFixed(2)}</div>
+                            <div className="text-sm text-gray-600 mr-4">
+                              <div>Selected: <strong>{formData.roomType}</strong></div>
+                              <div>Total: <strong>${calculateTotal().toFixed(2)}</strong></div>
                             </div>
                           )}
 
-                          {currentPage === "payment" ? (
+                          <button
+                            onClick={() => {
+                              const pages = ["overview", "sailing", "guests", "payment"];
+                              const idx = pages.indexOf(currentPage);
+                              if (idx < pages.length - 1) setCurrentPage(pages[idx + 1]);
+                            }}
+                            className={`px-6 py-3 rounded-lg font-semibold transition ${
+                              !canProceed() ? "bg-blue-300 text-white cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"
+                            }`}
+                            disabled={!canProceed()}
+                          >
+                            Next
+                          </button>
+
+                          {currentPage === "payment" && (
                             <button
                               onClick={handleSubmit}
                               disabled={!canProceed() || isSubmitting}
-                              className="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                              className={`px-6 py-3 rounded-lg font-semibold transition ${
+                                (!canProceed() || isSubmitting) ? "bg-green-300 text-white cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"
+                              }`}
                             >
-                              {isSubmitting ? "Processing..." : "Confirm Booking"}
-                              {!isSubmitting && <CheckCircle size={20} />}
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                const pages = ["overview", "sailing", "guests", "payment"];
-                                const idx = pages.indexOf(currentPage);
-                                setCurrentPage(pages[idx + 1]);
-                              }}
-                              disabled={!canProceed()}
-                              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                              Continue
-                              <ChevronRight size={20} />
+                              {isSubmitting ? "Submitting..." : "Confirm Booking"}
                             </button>
                           )}
                         </div>
@@ -1034,27 +1043,13 @@
                 </div>
               )}
             </main>
-
-            {/* Footer */}
-            <footer className="bg-gray-900 text-gray-400 py-6 mt-12">
-              <div className="max-w-7xl mx-auto px-6 text-center text-sm">
-                <p>© 1988-2026 Greg Book. All cruise trademarks belong to their respective owners.</p>
-                <p className="mt-2">Independent third-party booking platform. We are not affiliated with any cruise line.</p>
-              </div>
-            </footer>
           </div>
         );
       };
 
-      ReactDOM.render(<GregBookCruise />, document.getElementById("root"));
+      // Render
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<GregBookCruise />);
     </script>
   </body>
-</html></label>
-                
-                    
-                  
-                </select>
-              </div>
-
-              <div>
-                <label className="block text
+</html>
