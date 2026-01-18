@@ -3,35 +3,54 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Greg Book - Independent Third-Party Cruise Booking</title>
+    <title>Greg Book - Independent Third-Party Cruise Booking v:1.0.0 </title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      /* Core layout + font */
       body {
         margin: 0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
           "Oxygen", "Ubuntu", "Cantarell", sans-serif;
-        -webkit-user-select: text;
-        user-select: text;
+        -webkit-font-smoothing: antialiased;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       }
-      input[type="text"] {
-        -webkit-user-select: text;
-        user-select: text;
+
+      /*
+        Defensive user-select rules:
+        - By default, prevent accidental text selection on the page (this reduces clicks
+          selecting nearby text nodes and stealing focus on some browsers/devices).
+        - Explicitly re-enable selection & pointer events for real form controls and any
+          element marked .text-selectable.
+        - Checkbox/consent labels keep a dedicated class (.checkbox-label) so they remain
+          clickable but won't select their label text on pointer down.
+      */
+      * {
+        -webkit-user-select: none !important;
+        user-select: none !important;
       }
-      /* Allow labels to be selectable by default to avoid focus/selection jumps.
-         Use .no-select on labels where you explicitly want to prevent selection
-         (for example checkbox labels that act as toggles). */
-      label {
-        -webkit-user-select: text;
-        user-select: text;
+
+      input,
+      textarea,
+      select,
+      button,
+      option,
+      .text-selectable {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+        pointer-events: auto !important;
       }
+
+      /* checkbox labels stay clickable but not selectable */
+      .checkbox-label,
       .no-select {
-        -webkit-user-select: none;
-        user-select: none;
+        -webkit-user-select: none !important;
+        user-select: none !important;
+        cursor: pointer;
       }
+
       .glass {
         background: rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
@@ -52,7 +71,7 @@
     <script type="text/babel">
       const { useState } = React;
 
-      // Icons
+      // Icons (unchanged)
       const Ship = ({ size = 24, className = "" }) => (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
           <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
@@ -630,7 +649,7 @@
                 <label className="block text-sm font-medium mb-2">Itinerary</label>
                 <input
                   type="text"
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50"
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-selectable"
                   value={formData.itinerary}
                   disabled
                   placeholder="Select a ship first"
@@ -641,7 +660,7 @@
                 <label className="block text-sm font-medium mb-2">Nights</label>
                 <input
                   type="text"
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50"
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-selectable"
                   value={formData.nights ? `${formData.nights} Nights` : ""}
                   disabled
                   placeholder="Select a ship first"
@@ -716,7 +735,7 @@
               <input
                 type="text"
                 placeholder="Enter your Roblox username"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-selectable"
                 value={formData.robloxUsername}
                 onChange={(e) => setFormData({ ...formData, robloxUsername: e.target.value })}
                 autoComplete="off"
@@ -731,7 +750,7 @@
               <input
                 type="text"
                 placeholder="username or username#0000"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-selectable"
                 value={formData.discordUsername}
                 onChange={(e) => setFormData({ ...formData, discordUsername: e.target.value })}
                 autoComplete="off"
@@ -805,7 +824,7 @@
                   type="text"
                   placeholder="4242 4242 4242 4242"
                   maxLength="19"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-selectable"
                   value={formData.cardNumber}
                   onChange={(e) => setFormData({ ...formData, cardNumber: e.target.value })}
                   autoComplete="off"
@@ -822,7 +841,7 @@
                     type="text"
                     placeholder="MM/YY"
                     maxLength="5"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-selectable"
                     value={formData.expiryDate}
                     onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
                     autoComplete="off"
@@ -837,7 +856,7 @@
                     type="text"
                     placeholder="123"
                     maxLength="4"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-selectable"
                     value={formData.cvv}
                     onChange={(e) => setFormData({ ...formData, cvv: e.target.value })}
                     autoComplete="off"
@@ -853,7 +872,7 @@
                 <input
                   type="text"
                   placeholder="John Doe"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-selectable"
                   value={formData.cardName}
                   onChange={(e) => setFormData({ ...formData, cardName: e.target.value })}
                   autoComplete="off"
@@ -873,7 +892,7 @@
                 { key: 'agreedDocumentation', text: 'I am responsible for ensuring I have proper travel documentation (passport, visas, ID) for all ports of call.' },
                 { key: 'agreedInsurance', text: 'I understand that travel insurance is recommended but not included in this booking.' }
               ].map(({ key, text }) => (
-                <label key={key} className="flex items-start gap-3 cursor-pointer no-select">
+                <label key={key} className="flex items-start gap-3 checkbox-label">
                   <input
                     type="checkbox"
                     checked={formData[key]}
@@ -1050,6 +1069,15 @@
       // Render
       const root = ReactDOM.createRoot(document.getElementById("root"));
       root.render(<GregBookCruise />);
+
+      /*
+        Debug helpers (uncomment if you want to inspect runtime behavior in the console).
+        They log focus and selection events so you can see whether clicks go to the input
+        or to some other element that steals focus/selection.
+
+      document.addEventListener('focusin', e => console.log('focusin ->', e.target));
+      document.addEventListener('selectionchange', () => console.log('selection ->', String(document.getSelection())));
+      */
     </script>
   </body>
 </html>
