@@ -1,1557 +1,312 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Greg Book - Independent Third-Party Cruise Booking V5</title>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <style>
-      /* Base */
-      body {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-          "Oxygen", "Ubuntu", "Cantarell", sans-serif;
-        -webkit-font-smoothing: antialiased;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      }
-
-      /*
-        Selection & copy behavior:
-        - Allow normal selection and copy/paste interaction inside form controls and designated selectable elements.
-        - Prevent accidental selection on non-interactive UI chrome (cards, labels, buttons).
-      */
-
-      /* Prevent selection on UI chrome (cards/buttons/labels) */
-      .card-hover,
-      button,
-      label,
-      .checkbox-label,
-      .no-select {
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-touch-callout: none; /* iOS Safari */
-      }
-
-      /* Allow selection and normal caret behavior inside form fields and selectable text */
-      input,
-      textarea,
-      select,
-      option,
-      #booking-id,
-      .allow-select {
-        -webkit-user-select: text;
-        user-select: text;
-        -webkit-touch-callout: text; /* iOS Safari */
-      }
-
-      /* Small niceties */
-      .glass {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-      .card-hover {
-        transition: all 0.3s ease;
-      }
-      .card-hover:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-      }
-
-      /* Normal visible selection */
-      ::selection {
-        background: rgba(96, 165, 250, 0.35);
-        color: inherit;
-      }
-
-      /* Make small interactive controls show pointer */
-      button,
-      .checkbox-label {
-        cursor: pointer;
-      }
-    </style>
-  </head>
-
-  <body>
-    <div id="root"></div>
-
-    <script type="text/babel">
-      const { useState } = React;
-
-      // Icons
-      const Ship = ({ size = 24, className = "" }) => (
-        <svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={className}
-        >
-          <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-          <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76" />
-          <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6" />
-          <path d="M12 10v4" />
-          <path d="M12 2v3" />
-        </svg>
-      );
-
-      const Calendar = ({ size = 24, className = "" }) => (
-        <svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={className}
-        >
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-      );
-
-      const Users = ({ size = 24, className = "" }) => (
-        <svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={className}
-        >
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-        </svg>
-      );
-
-      const CreditCard = ({ size = 24, className = "" }) => (
-        <svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={className}
-        >
-          <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-          <line x1="1" y1="10" x2="23" y2="10" />
-        </svg>
-      );
-
-      const CheckCircle = ({ size = 24, className = "" }) => (
-        <svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={className}
-        >
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-          <polyline points="22 4 12 14.01 9 11.01" />
-        </svg>
-      );
-
-      const Anchor = ({ size = 24, className = "" }) => (
-        <svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={className}
-        >
-          <circle cx="12" cy="5" r="3" />
-          <line x1="12" y1="22" x2="12" y2="8" />
-          <path d="M5 12H2a10 10 0 0 0 20 0h-3" />
-        </svg>
-      );
-
-      const AlertCircle = ({ size = 24, className = "" }) => (
-        <svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={className}
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-      );
-
-      const Home = ({ size = 24, className = "" }) => (
-        <svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={className}
-        >
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-      );
-
-      const GregBookCruise = () => {
-        const [activeTab, setActiveTab] = useState("dashboard");
-        const [currentPage, setCurrentPage] = useState("overview");
-        const [formData, setFormData] = useState({
-          cruiseLine: "CR Cruises",
-          region: "",
-          port: "",
-          ship: "",
-          itinerary: "",
-          nights: "",
-          departure: "",
-          sailingDate: "",
-          guests: 2,
-          roomType: "",
-          robloxUsername: "",
-          discordUsername: "",
-          cardNumber: "",
-          expiryDate: "",
-          cvv: "",
-          cardName: "",
-          agreedTerms: false,
-          agreedThirdParty: false,
-          agreedRoomSubject: false,
-          agreedNonRefundable: false,
-          agreedPriceChanges: false,
-          agreedDocumentation: false,
-          agreedInsurance: false,
-        });
-        const [bookingStatus, setBookingStatus] = useState(null);
-        const [isSubmitting, setIsSubmitting] = useState(false);
-        const [bookingId, setBookingId] = useState(null); // persistent booking id for confirmation and selection
-
-        // Full cruiseData - all original CR ships retained, each labeled cruiseLine:"CR Cruises".
-        // Added Grand Cruises ships (Grand Discovery and Grand Adventure) with exact available dates you requested.
-        const cruiseData = {
-          "CR Odyssey": {
-            itinerary: "Round Trip Bahamas Cruise",
-            nights: "7",
-            ports: ["Port of New York, NY"],
-            region: "Bahamas",
-            price: 2100,
-            portsOfCall:
-              "Port Of New York - Port Canaveral - Nassau - Ocean's Edge - Port Of New York",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Sentient": {
-            itinerary: "Hawaii & Honolulu Cruise",
-            nights: "17",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Hawaii",
-            price: 3800,
-            portsOfCall:
-              "Port Mirage Bay - Honolulu, Oahu - Kona - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Pride Of America": {
-            itinerary: "Hawaii & Honolulu Cruise",
-            nights: "19",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Hawaii",
-            price: 3400,
-            portsOfCall:
-              "Port Mirage Bay - Ensenada - Honolulu, Oahu - Kona - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Orion": {
-            itinerary: "Catalina & Ensenada Cruise",
-            nights: "3",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Catalina",
-            price: 110,
-            portsOfCall: "Port Mirage Bay - Ensenada - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Dawn": {
-            itinerary: "Catalina & Ensenada Cruise",
-            nights: "3",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Catalina",
-            price: 116,
-            portsOfCall: "Port Mirage Bay - Catalina Island - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Riviera": {
-            itinerary: "Catalina & Ensenada Cruise",
-            nights: "4",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Mexico",
-            price: 400,
-            portsOfCall: "Port Mirage Bay - Cabo San Lucas - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Pacific Dream": {
-            itinerary: "Catalina & Ensenada Cruise",
-            nights: "5",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Mexico",
-            price: 988,
-            portsOfCall:
-              "Port Mirage Bay - Cabo San Lucas - Mazatlan - Puerto Vallarta - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Pacific Mariner": {
-            itinerary: "Catalina & Ensenada Cruise",
-            nights: "9",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Mexico",
-            price: 991,
-            portsOfCall:
-              "Port Mirage Bay - Catalina Island - Ensenada - Cabo San Lucas - Mazatlan - Puerto Vallarta - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Legacy": {
-            itinerary: "Catalina & Ensenada Cruise",
-            nights: "9",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Mexico",
-            price: 1617,
-            portsOfCall:
-              "Port Mirage Bay - Ensenada - Cabo San Lucas - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Solstice": {
-            itinerary: "Catalina & Ensenada Cruise",
-            nights: "7",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Mexico",
-            price: 1170,
-            portsOfCall:
-              "Port Mirage Bay - Catalina Island - Ensenada - Cabo San Lucas - Mazatlan - Puerto Vallarta - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Essence of the Seas": {
-            itinerary: "Catalina & Ensenada Cruise",
-            nights: "9",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Mexico",
-            price: 1099,
-            portsOfCall:
-              "Port Mirage Bay - Catalina Island - Ensenada - Cabo San Lucas - Mazatlan - Puerto Vallarta - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Jadeite of the Seas": {
-            itinerary: "Catalina & Ensenada Cruise",
-            nights: "7",
-            ports: ["Port Mirage Bay, AZ"],
-            region: "Mexico",
-            price: 2700,
-            portsOfCall:
-              "Port Mirage Bay - Catalina Island - Ensenada - Cabo San Lucas - Port Mirage Bay",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Galaxy": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "4",
-            ports: ["Port Canaveral, FL"],
-            region: "Bahamas",
-            price: 199,
-            portsOfCall:
-              "Port Canaveral - Key West - Ocean's Edge - Port Canaveral",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Treasure": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "4",
-            ports: ["Port Everglades, FL"],
-            region: "Bahamas",
-            price: 215,
-            portsOfCall:
-              "Port Everglades - Key West - Ocean's Edge - Port Everglades",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Tropical": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "4",
-            ports: ["Port Canaveral, FL"],
-            region: "Bahamas",
-            price: 210,
-            portsOfCall:
-              "Port Canaveral - Key West - Ocean's Edge - Port Canaveral",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Adventure": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "3",
-            ports: ["Port Everglades, FL"],
-            region: "Bahamas",
-            price: 777,
-            portsOfCall:
-              "Port Everglades - Nassau - Ocean's Edge - Port Canaveral",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Star": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "3",
-            ports: ["Port Canaveral, FL"],
-            region: "Bahamas",
-            price: 1161,
-            portsOfCall:
-              "Port Canaveral - Nassau - Ocean's Edge - Port Canaveral",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Dream": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "4",
-            ports: ["Port Canaveral, FL"],
-            region: "Bahamas",
-            price: 1499,
-            portsOfCall:
-              "Port Canaveral - Nassau - Ocean's Edge - Port Canaveral",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Encore": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "4",
-            ports: ["Port Everglades, FL"],
-            region: "Bahamas",
-            price: 1050,
-            portsOfCall:
-              "Port Everglades - Nassau - Ocean's Edge - Port Everglades",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Caribbean": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "7",
-            ports: ["Port Canaveral, FL"],
-            region: "Bahamas",
-            price: 1100,
-            portsOfCall:
-              "Port Canaveral - Nassau - Freeport - Bimini - Key West - Ocean's Edge - Port Canaveral",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Emerald of the Seas": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "6",
-            ports: ["Port Canaveral, FL"],
-            region: "Bahamas",
-            price: 1200,
-            portsOfCall:
-              "Port Canaveral - Nassau - Key West - Ocean's Edge - Port Canaveral",
-            cruiseLine: "CR Cruises",
-          },
-          "CR Diamond of the Seas": {
-            itinerary: "Bahamas: Ocean's Edge & Nassau",
-            nights: "9",
-            ports: ["Port Miami, FL"],
-            region: "Bahamas",
-            price: 1900,
-            portsOfCall:
-              "Port Miami - Nassau - Freeport - Bimini - Ocean's Edge - Port Miami",
-            cruiseLine: "CR Cruises",
-          },
-
-          // Grand Cruises ships added (do not remove any CR ships)
-          "Grand Discovery": {
-            itinerary: "Maiden Voyage 4-Night Bahamian Cruise",
-            nights: "4",
-            ports: ["Port Canaveral, FL"],
-            region: "Bahamas",
-            price: 1299,
-            portsOfCall:
-              "Port Canaveral - Nassau - Horizon Cay - Sea - Port Canaveral",
-            cruiseLine: "Grand Cruises",
-            availableDates: ["Mar 10, 2026 05:30 EST"], // exact date/time requested
-          },
-          "Grand Adventure": {
-            itinerary: "Maiden Voyage 7-Night Eastern Caribbean Cruise",
-            nights: "7",
-            ports: ["Port Canaveral, FL"],
-            region: "Eastern Caribbean",
-            price: 2499,
-            portsOfCall:
-              "Port Canaveral - Sea - Sea - Tortola - Grand Turk - Sea - Horizon Cay - Port Canaveral",
-            cruiseLine: "Grand Cruises",
-            availableDates: ["Jun 22, 2026 05:30 EST"], // exact date/time requested
-          },
-        };
-
-        const regions = [
-          "Bahamas",
-          "Catalina",
-          "Mexico",
-          "Hawaii",
-          "Eastern Caribbean",
-        ];
-        const roomTypes = [
-          { type: "Interior", price: 1 },
-          { type: "Ocean View", price: 1.2 },
-          { type: "Balcony", price: 1.5 },
-          { type: "Suite", price: 2 },
-        ];
-
-        const calculateTotal = () => {
-          const room = roomTypes.find((r) => r.type === formData.roomType);
-          const shipData = cruiseData[formData.ship];
-          if (!room || !shipData) return 0;
-          return shipData.price * room.price * formData.guests;
-        };
-
-        // Respect cruiseLine when listing ships and ports; fallback default stays "CR Cruises"
-        const getAvailableShips = () => {
-          const line = formData.cruiseLine || "CR Cruises";
-          if (!formData.region) {
-            return Object.keys(cruiseData).filter(
-              (ship) => (cruiseData[ship].cruiseLine || "CR Cruises") === line
-            );
-          }
-          return Object.keys(cruiseData).filter(
-            (ship) =>
-              cruiseData[ship].region === formData.region &&
-              (cruiseData[ship].cruiseLine || "CR Cruises") === line
-          );
-        };
-
-        const getAvailablePorts = () => {
-          const line = formData.cruiseLine || "CR Cruises";
-          if (!formData.region) {
-            return [
-              ...new Set(
-                Object.keys(cruiseData)
-                  .filter(
-                    (s) => (cruiseData[s].cruiseLine || "CR Cruises") === line
-                  )
-                  .flatMap((ship) => cruiseData[ship].ports)
-              ),
-            ];
-          }
-          const shipsInRegion = Object.values(cruiseData).filter(
-            (ship) =>
-              ship.region === formData.region &&
-              (ship.cruiseLine || "CR Cruises") === line
-          );
-          return [...new Set(shipsInRegion.flatMap((ship) => ship.ports))];
-        };
-
-        const sendWebhook = (bookingData, id) => {
-          const webhookUrl =
-            "https://discord.com/api/webhooks/1462305721080221847/65dPZEh2o2vUyew4XT6EV1eQSgufkHqowH166Z_W8Y6tR1tUwE7sOfh4NxJJMEEXHgtM";
-          const total = calculateTotal();
-
-          const payload = {
-            embeds: [
-              {
-                title: "🚢 New Cruise Booking",
-                color: 3066993,
-                fields: [
-                  { name: "Booking ID", value: id, inline: false },
-                  {
-                    name: "Cruise Line",
-                    value: bookingData.cruiseLine || "CR Cruises",
-                    inline: true,
-                  },
-                  {
-                    name: "👤 Roblox Username",
-                    value: bookingData.robloxUsername,
-                    inline: true,
-                  },
-                  {
-                    name: "💬 Discord Username",
-                    value: bookingData.discordUsername,
-                    inline: true,
-                  },
-                  {
-                    name: "📅 Sailing Date",
-                    value: bookingData.sailingDate,
-                    inline: true,
-                  },
-                  { name: "🚢 Ship", value: bookingData.ship, inline: true },
-                  {
-                    name: "🗺️ Itinerary",
-                    value: bookingData.itinerary,
-                    inline: true,
-                  },
-                  { name: "⚓ Port", value: bookingData.port, inline: true },
-                  {
-                    name: "🌎 Region",
-                    value: bookingData.region,
-                    inline: true,
-                  },
-                  {
-                    name: "🌙 Duration",
-                    value: `${bookingData.nights} nights`,
-                    inline: true,
-                  },
-                  {
-                    name: "👥 Guests",
-                    value: bookingData.guests.toString(),
-                    inline: true,
-                  },
-                  {
-                    name: "🛏️ Room Type",
-                    value: bookingData.roomType,
-                    inline: true,
-                  },
-                  {
-                    name: "💰 Total Amount",
-                    value: `$${total.toFixed(2)}`,
-                    inline: false,
-                  },
-                ],
-                timestamp: new Date().toISOString(),
-                footer: { text: "Greg Book - Third-Party Cruise Booking" },
-              },
-            ],
-          };
-
-          fetch(webhookUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }).catch(() => {});
-        };
-
-        const handleSubmit = () => {
-          const allAgreed =
-            formData.agreedTerms &&
-            formData.agreedThirdParty &&
-            formData.agreedRoomSubject &&
-            formData.agreedNonRefundable &&
-            formData.agreedPriceChanges &&
-            formData.agreedDocumentation &&
-            formData.agreedInsurance;
-
-          if (!allAgreed) {
-            alert(
-              "Please agree to all terms and conditions before confirming your booking"
-            );
-            return;
-          }
-
-          setIsSubmitting(true);
-          const id = `GB-${Date.now()}`;
-          setBookingId(id);
-          sendWebhook(formData, id);
-
-          setTimeout(() => {
-            setIsSubmitting(false);
-            setBookingStatus("success");
-            setCurrentPage("confirmation");
-          }, 1500);
-        };
-
-        const canProceed = () => {
-          switch (currentPage) {
-            case "overview":
-              return (
-                formData.ship &&
-                formData.itinerary &&
-                formData.nights &&
-                formData.departure
-              );
-            case "sailing":
-              return formData.sailingDate;
-            case "guests":
-              return (
-                formData.guests &&
-                formData.roomType &&
-                formData.robloxUsername.trim() &&
-                formData.discordUsername.trim()
-              );
-            case "payment":
-              return (
-                formData.cardNumber &&
-                formData.expiryDate &&
-                formData.cvv &&
-                formData.cardName &&
-                formData.agreedTerms &&
-                formData.agreedThirdParty &&
-                formData.agreedRoomSubject &&
-                formData.agreedNonRefundable &&
-                formData.agreedPriceChanges &&
-                formData.agreedDocumentation &&
-                formData.agreedInsurance
-              );
-            default:
-              return false;
-          }
-        };
-
-        // Dashboard Content
-        const DashboardContent = () => (
-          <div className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl p-6 shadow-lg card-hover">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-500 text-sm">Total Ships</p>
-                    <h3 className="text-3xl font-bold text-gray-800 mt-1">
-                      {Object.keys(cruiseData).length}
-                    </h3>
-                  </div>
-                  <Ship size={40} className="text-blue-500" />
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-lg card-hover">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-500 text-sm">Available Routes</p>
-                    <h3 className="text-3xl font-bold text-gray-800 mt-1">4</h3>
-                  </div>
-                  <Calendar size={40} className="text-green-500" />
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 shadow-lg card-hover">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-500 text-sm">Starting From</p>
-                    <h3 className="text-3xl font-bold text-gray-800 mt-1">
-                      $110
-                    </h3>
-                  </div>
-                  <CreditCard size={40} className="text-purple-500" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h2 className="text-2xl font-bold mb-6">Featured Destinations</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                {regions.map((region) => {
-                  const shipsInRegion = Object.values(cruiseData).filter(
-                    (ship) => ship.region === region
-                  );
-                  const minPrice = shipsInRegion.length
-                    ? Math.min(...shipsInRegion.map((ship) => ship.price))
-                    : 0;
-
-                  return (
-                    <div
-                      key={region}
-                      className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-500 transition cursor-pointer"
-                      onClick={() => {
-                        setActiveTab("booking");
-                        setFormData({
-                          ...formData,
-                          region: region,
-                          ship: "",
-                          port: "",
-                        });
-                        setCurrentPage("overview");
-                      }}
-                    >
-                      <h3 className="text-xl font-bold mb-2">{region}</h3>
-                      <p className="text-gray-600 mb-4">
-                        {shipsInRegion.length} ships available
-                      </p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        From ${minPrice}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h2 className="text-2xl font-bold mb-6">Why Choose Greg Book?</h2>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <Ship size={32} className="text-blue-600" />
-                  </div>
-                  <h3 className="font-bold mb-2">Wide Selection</h3>
-                  <p className="text-gray-600 text-sm">
-                    Multiple ships across multiple lines
-                  </p>
-                </div>
-                <div className="text-center">
-                  <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle size={32} className="text-green-600" />
-                  </div>
-                  <h3 className="font-bold mb-2">Best Prices</h3>
-                  <p className="text-gray-600 text-sm">
-                    Competitive rates guaranteed
-                  </p>
-                </div>
-                <div className="text-center">
-                  <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <Users size={32} className="text-purple-600" />
-                  </div>
-                  <h3 className="font-bold mb-2">Easy Booking</h3>
-                  <p className="text-gray-600 text-sm">
-                    Simple multi-step process
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-        // Booking Flow Components
-        const ProgressBar = () => {
-          const pages = [
-            "overview",
-            "sailing",
-            "guests",
-            "payment",
-            "confirmation",
-          ];
-          const currentIndex = pages.indexOf(currentPage);
-
-          return (
-            <div className="mb-8">
-              <div className="flex items-center justify-between">
-                {pages.map((page, idx) => (
-                  <React.Fragment key={page}>
-                    <div className="flex flex-col items-center">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                          idx <= currentIndex
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-200 text-gray-500"
-                        }`}
-                      >
-                        {idx + 1}
-                      </div>
-                      <span className="text-xs mt-2 capitalize">{page}</span>
-                    </div>
-                    {idx < pages.length - 1 && (
-                      <div
-                        className={`flex-1 h-1 mx-2 ${
-                          idx < currentIndex ? "bg-blue-600" : "bg-gray-200"
-                        }`}
-                      />
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          );
-        };
-
-        // OverviewPage: Cruise Line selector + editable textboxes (itinerary/nights editable)
-        const OverviewPage = () => (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Ship size={24} className="text-blue-600" />
-              Cruise Overview
-            </h2>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Cruise Line
-                </label>
-                <select
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.cruiseLine}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      cruiseLine: e.target.value,
-                      ship: "",
-                      port: "",
-                    })
-                  }
-                >
-                  <option value="CR Cruises">CR Cruises</option>
-                  <option value="Grand Cruises">Grand Cruises</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Departure Port
-                </label>
-                <select
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.port}
-                  onChange={(e) =>
-                    setFormData({ ...formData, port: e.target.value, ship: "" })
-                  }
-                  disabled={!formData.region}
-                >
-                  <option value="">Select Port</option>
-                  {getAvailablePorts().map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Ship</label>
-                <select
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.ship}
-                  onChange={(e) => {
-                    const selectedShip = e.target.value;
-                    const shipData = cruiseData[selectedShip];
-                    setFormData({
-                      ...formData,
-                      ship: selectedShip,
-                      itinerary: shipData?.itinerary || "",
-                      nights: shipData?.nights || "",
-                      port: shipData?.ports?.[0] || formData.port,
-                      sailingDate: "", // reset selected date when changing ship
-                    });
-                  }}
-                  disabled={!formData.region}
-                >
-                  <option value="">Select Ship</option>
-                  {getAvailableShips().map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Itinerary
-                </label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-white"
-                  value={formData.itinerary}
-                  onChange={(e) =>
-                    setFormData({ ...formData, itinerary: e.target.value })
-                  }
-                  placeholder="Itinerary (editable)"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Nights</label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-white"
-                  value={formData.nights}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nights: e.target.value })
-                  }
-                  placeholder="Number of nights"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Departure Month
-                </label>
-                <select
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.departure}
-                  onChange={(e) =>
-                    setFormData({ ...formData, departure: e.target.value })
-                  }
-                >
-                  <option value="">Select Month</option>
-                  <option value="Feb 2026">February 2026</option>
-                  <option value="Mar 2026">March 2026</option>
-                  <option value="Apr 2026">April 2026</option>
-                  <option value="May 2026">May 2026</option>
-                  <option value="Jun 2026">June 2026</option>
-                  <option value="Jul 2026">July 2026</option>
-                  <option value="Aug 2026">August 2026</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        );
-
-        // SailingPage: uses ship-specific availableDates when present (Grand ships use the exact dates provided)
-        const SailingPage = () => {
-          const defaultDates = [
-            "Feb 15, 2026 05:00 EST",
-            "Feb 22, 2026 05:00 EST",
-            "Mar 01, 2026 05:30 EST",
-            "Mar 08, 2026 05:30 EST",
-            "Apr 05, 2026 05:00 EST",
-            "May 10, 2026 05:00 EST",
-            "Jun 14, 2026 05:30 EST",
-            "Jun 22, 2026 05:30 EST",
-            "Jul 06, 2026 05:30 EST",
-            "Aug 03, 2026 05:30 EST",
-            "Sep 07, 2026 05:30 EST",
-          ];
-          const dates =
-            cruiseData[formData.ship] &&
-            cruiseData[formData.ship].availableDates
-              ? cruiseData[formData.ship].availableDates
-              : defaultDates;
-
-          return (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Calendar size={24} className="text-blue-600" />
-                Select Sailing Date & Time
-              </h2>
-
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-blue-900">
-                  <strong>Ship:</strong> {formData.ship} |{" "}
-                  <strong>Itinerary:</strong> {formData.itinerary} |{" "}
-                  <strong>Duration:</strong> {formData.nights} nights
-                </p>
-                {cruiseData[formData.ship] && (
-                  <p className="text-xs text-blue-700 mt-2">
-                    <strong>Ports:</strong>{" "}
-                    {cruiseData[formData.ship].portsOfCall}
-                  </p>
-                )}
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-4">
-                {dates.map((date) => (
-                  <button
-                    key={date}
-                    onClick={() =>
-                      setFormData({ ...formData, sailingDate: date })
-                    }
-                    className={`p-4 border-2 rounded-lg text-left transition card-hover ${
-                      formData.sailingDate === date
-                        ? "border-blue-600 bg-blue-50"
-                        : "border-gray-200 hover:border-blue-300"
-                    }`}
-                  >
-                    <div className="font-semibold">{date}</div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      From ${cruiseData[formData.ship]?.price || 0}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        };
-
-        const GuestsPage = () => (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Users size={24} className="text-blue-600" />
-              Guests & Room Selection
-            </h2>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Roblox Username *
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your Roblox username"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.robloxUsername}
-                onChange={(e) =>
-                  setFormData({ ...formData, robloxUsername: e.target.value })
-                }
-                autoComplete="on"
-                spellCheck="false"
-                autoCorrect="off"
-                autoCapitalize="off"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Discord Username *
-              </label>
-              <input
-                type="text"
-                placeholder="username or username#0000"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={formData.discordUsername}
-                onChange={(e) =>
-                  setFormData({ ...formData, discordUsername: e.target.value })
-                }
-                autoComplete="on"
-                spellCheck="false"
-                autoCorrect="off"
-                autoCapitalize="off"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Booking details will be sent to Discord webhook
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Number of Guests
-              </label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4].map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => setFormData({ ...formData, guests: num })}
-                    className={`px-6 py-3 rounded-lg font-semibold transition ${
-                      formData.guests === num
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 hover:bg-gray-200"
-                    }`}
-                  >
-                    {num} Guest{num > 1 ? "s" : ""}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-4">
-                Room Type
-              </label>
-              <div className="grid md:grid-cols-2 gap-4">
-                {roomTypes.map((room) => {
-                  const shipData = cruiseData[formData.ship];
-                  const basePrice = shipData ? shipData.price : 0;
-                  const roomPrice = basePrice * room.price;
-
-                  return (
-                    <button
-                      key={room.type}
-                      onClick={() =>
-                        setFormData({ ...formData, roomType: room.type })
-                      }
-                      className={`p-6 border-2 rounded-lg text-left transition card-hover ${
-                        formData.roomType === room.type
-                          ? "border-blue-600 bg-blue-50"
-                          : "border-gray-200 hover:border-blue-300"
-                      }`}
-                    >
-                      <div className="font-bold text-lg">{room.type}</div>
-                      <div className="text-2xl font-bold text-blue-600 mt-2">
-                        ${(roomPrice * formData.guests).toFixed(2)}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        for {formData.guests} guest
-                        {formData.guests > 1 ? "s" : ""} ({formData.nights}{" "}
-                        nights)
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-
-        const PaymentPage = () => (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <CreditCard size={24} className="text-blue-600" />
-              Payment Information (Demo)
-            </h2>
-
-            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg flex items-start gap-3">
-              <AlertCircle
-                size={20}
-                className="text-yellow-600 flex-shrink-0 mt-1"
-              />
-              <p className="text-sm text-yellow-900">
-                This is a demo payment form. No actual charges will be
-                processed. Use test card: 4242 4242 4242 4242
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Card Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="4242 4242 4242 4242"
-                  maxLength="19"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.cardNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, cardNumber: e.target.value })
-                  }
-                  autoComplete="cc-number"
-                  spellCheck="false"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Expiry Date
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="MM/YY"
-                    maxLength="5"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    value={formData.expiryDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, expiryDate: e.target.value })
-                    }
-                    autoComplete="cc-exp"
-                    spellCheck="false"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">CVV</label>
-                  <input
-                    type="text"
-                    placeholder="123"
-                    maxLength="4"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    value={formData.cvv}
-                    onChange={(e) =>
-                      setFormData({ ...formData, cvv: e.target.value })
-                    }
-                    autoComplete="cc-csc"
-                    spellCheck="false"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Cardholder Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="John Doe"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={formData.cardName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, cardName: e.target.value })
-                  }
-                  autoComplete="cc-name"
-                  spellCheck="false"
-                  autoCorrect="off"
-                />
-              </div>
-            </div>
-
-            <div className="border-t pt-4 space-y-3">
-              {[
-                {
-                  key: "agreedTerms",
-                  text: "I have read and agree to the Terms & Conditions, Privacy Policy, and Cancellation Policy.",
-                },
-                {
-                  key: "agreedThirdParty",
-                  text: "I understand this is a third-party booking and Greg Book is not affiliated with any cruise line.",
-                },
-                {
-                  key: "agreedRoomSubject",
-                  text: "I acknowledge that room type and cabin assignment are subject to change and availability at check-in.",
-                },
-                {
-                  key: "agreedNonRefundable",
-                  text: "I understand that this booking may be non-refundable and cancellation fees may apply.",
-                },
-                {
-                  key: "agreedPriceChanges",
-                  text: "I acknowledge that prices are subject to change and additional fees (port fees, taxes, gratuities) may apply.",
-                },
-                {
-                  key: "agreedDocumentation",
-                  text: "I am responsible for ensuring I have proper travel documentation (passport, visas, ID) for all ports of call.",
-                },
-                {
-                  key: "agreedInsurance",
-                  text: "I understand that travel insurance is recommended but not included in this booking.",
-                },
-              ].map(({ key, text }) => (
-                <label
-                  key={key}
-                  className="flex items-start gap-3 checkbox-label"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData[key]}
-                    onChange={(e) =>
-                      setFormData({ ...formData, [key]: e.target.checked })
-                    }
-                    className="mt-1"
-                  />
-                  <span className="text-sm text-gray-700">{text}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        );
-
-        const ConfirmationPage = () => (
-          <div className="text-center space-y-6">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full">
-              <CheckCircle size={48} className="text-green-600" />
-            </div>
-
-            <h2 className="text-3xl font-bold text-gray-900">
-              Booking Confirmed!
-            </h2>
-
-            <div className="bg-gray-50 p-6 rounded-lg text-left max-w-2xl mx-auto">
-              <h3 className="font-bold text-lg mb-4">Booking Details</h3>
-              <div className="space-y-2 text-sm">
-                <p>
-                  <strong>Booking ID:</strong>{" "}
-                  <span id="booking-id" className="allow-select">
-                    {bookingId || `GB-${Date.now()}`}
-                  </span>
-                </p>
-                <p>
-                  <strong>Cruise Line:</strong> {formData.cruiseLine}
-                </p>
-                <p>
-                  <strong>Roblox Username:</strong> {formData.robloxUsername}
-                </p>
-                <p>
-                  <strong>Discord Username:</strong> {formData.discordUsername}
-                </p>
-                <p>
-                  <strong>Ship:</strong> {formData.ship}
-                </p>
-                <p>
-                  <strong>Itinerary:</strong> {formData.itinerary}
-                </p>
-                <p>
-                  <strong>Sailing Date & Time:</strong> {formData.sailingDate}
-                </p>
-                <p>
-                  <strong>Port:</strong> {formData.port}
-                </p>
-                <p>
-                  <strong>Duration:</strong> {formData.nights} nights
-                </p>
-                <p>
-                  <strong>Guests:</strong> {formData.guests}
-                </p>
-                <p>
-                  <strong>Room Type:</strong> {formData.roomType}
-                </p>
-                <p className="text-xl font-bold text-blue-600 pt-4 border-t">
-                  Total: ${calculateTotal().toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            <p className="text-gray-600">
-              A confirmation has been sent to our Discord channel.
-            </p>
-
-            <button
-              onClick={() => {
-                setActiveTab("dashboard");
-                setCurrentPage("overview");
-                setFormData({
-                  cruiseLine: "CR Cruises",
-                  region: "",
-                  port: "",
-                  ship: "",
-                  itinerary: "",
-                  nights: "",
-                  departure: "",
-                  sailingDate: "",
-                  guests: 2,
-                  roomType: "",
-                  robloxUsername: "",
-                  discordUsername: "",
-                  cardNumber: "",
-                  expiryDate: "",
-                  cvv: "",
-                  cardName: "",
-                  agreedTerms: false,
-                  agreedThirdParty: false,
-                  agreedRoomSubject: false,
-                  agreedNonRefundable: false,
-                  agreedPriceChanges: false,
-                  agreedDocumentation: false,
-                  agreedInsurance: false,
-                });
-                setBookingStatus(null);
-                setBookingId(null);
-              }}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
-              Return to Dashboard
-            </button>
-          </div>
-        );
-
-        return (
-          <div className="min-h-screen">
-            {/* Header */}
-            <header className="bg-white shadow-md">
-              <div className="max-w-7xl mx-auto px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Anchor size={36} className="text-blue-600" />
-                    <div>
-                      <h1 className="text-2xl font-bold text-gray-900">
-                        Greg Book
-                      </h1>
-                      <p className="text-sm text-gray-600">
-                        Independent Third-Party Cruise Booking
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Navigation */}
-                  <nav className="flex gap-4">
-                    <button
-                      onClick={() => {
-                        setActiveTab("dashboard");
-                        setCurrentPage("overview");
-                      }}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-                        activeTab === "dashboard"
-                          ? "bg-blue-600 text-white"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      <Home size={20} />
-                      Dashboard
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveTab("booking");
-                        setCurrentPage("overview");
-                      }}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
-                        activeTab === "booking"
-                          ? "bg-blue-600 text-white"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      <Ship size={20} />
-                      Booking
-                    </button>
-                  </nav>
-                </div>
-              </div>
-            </header>
-
-            <main className="max-w-7xl mx-auto px-6 py-8">
-              {activeTab === "dashboard" && <DashboardContent />}
-
-              {activeTab === "booking" && (
-                <div>
-                  <div className="bg-white rounded-xl p-6 shadow mb-6">
-                    <ProgressBar />
-                    <div className="space-y-6">
-                      {currentPage === "overview" && <OverviewPage />}
-                      {currentPage === "sailing" && <SailingPage />}
-                      {currentPage === "guests" && <GuestsPage />}
-                      {currentPage === "payment" && <PaymentPage />}
-                      {currentPage === "confirmation" && <ConfirmationPage />}
-                    </div>
-
-                    <div className="mt-6 flex justify-between">
-                      <div>
-                        {currentPage !== "overview" &&
-                          currentPage !== "confirmation" && (
-                            <button
-                              onClick={() => {
-                                const pages = [
-                                  "overview",
-                                  "sailing",
-                                  "guests",
-                                  "payment",
-                                  "confirmation",
-                                ];
-                                const idx = pages.indexOf(currentPage);
-                                const prev = pages[Math.max(0, idx - 1)];
-                                setCurrentPage(prev);
-                              }}
-                              className="px-6 py-2 rounded-lg bg-gray-100 hover:bg-gray-200"
-                            >
-                              Back
-                            </button>
-                          )}
-                      </div>
-
-                      <div>
-                        {currentPage !== "confirmation" && (
-                          <button
-                            onClick={() => {
-                              if (currentPage === "payment") {
-                                handleSubmit();
-                                return;
-                              }
-                              if (!canProceed()) {
-                                alert(
-                                  "Please complete required fields before proceeding."
-                                );
-                                return;
-                              }
-                              const pages = [
-                                "overview",
-                                "sailing",
-                                "guests",
-                                "payment",
-                                "confirmation",
-                              ];
-                              const idx = pages.indexOf(currentPage);
-                              const next =
-                                pages[Math.min(pages.length - 1, idx + 1)];
-                              setCurrentPage(next);
-                            }}
-                            className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                          >
-                            {currentPage === "payment"
-                              ? isSubmitting
-                                ? "Processing..."
-                                : "Confirm Booking"
-                              : "Next"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </main>
-          </div>
-        );
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Greg Book - Cruise Booking</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .card-hover { transition: all 0.3s ease; }
+    .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+
+    const Ship = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+        <path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.94 5.34 2.81 7.76"/>
+        <path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/>
+      </svg>
+    );
+
+    const CheckCircle = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    );
+
+    const RefreshCw = ({ size = 24 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="23 4 23 10 17 10"/>
+        <polyline points="1 20 1 14 7 14"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+    );
+
+    const GregBookApp = () => {
+      const [step, setStep] = useState(1);
+      const [form, setForm] = useState({
+        region: '',
+        cruise: null,
+        guests: 2,
+        roomType: '',
+        robloxUser: '',
+        discordUser: ''
+      });
+      const [cruises, setCruises] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [bookingId, setBookingId] = useState(null);
+
+      // Region schedule URLs - REPLACE WITH YOUR ACTUAL URLs
+      const scheduleUrls = {
+        'Bahamas': 'https://sites.google.com/view/visit-cr-cruiseline-com/plan-your-cruise/bahamas-page?authuser=0',
+        'Mexico': 'https://sites.google.com/view/visit-cr-cruiseline-com/plan-your-cruise/mexico-page?authuser=0', 
+        'Hawaii': 'https://sites.google.com/view/visit-cr-cruiseline-com/plan-your-cruise/hawaii-page?authuser=0',
+        'New York': 'https://sites.google.com/view/visit-cr-cruiseline-com/plan-your-cruise/new-york-page?authuser=0'
       };
 
-      ReactDOM.render(<GregBookCruise />, document.getElementById("root"));
-    </script>
-  </body>
+      const roomTypes = [
+        { type: 'Interior', multiplier: 1 },
+        { type: 'Ocean View', multiplier: 1.2 },
+        { type: 'Balcony', multiplier: 1.5 },
+        { type: 'Suite', multiplier: 2 }
+      ];
+
+      const fetchSchedules = async (region) => {
+        setLoading(true);
+        try {
+          // In production, this would fetch from the actual website
+          // For now, returning mock data structure
+          const mockData = [
+            { ship: 'CR Galaxy', nights: 4, price: 199, date: 'Feb 15, 2026', itinerary: "Ocean's Edge & Nassau" },
+            { ship: 'CR Dream', nights: 4, price: 1499, date: 'Mar 01, 2026', itinerary: "Ocean's Edge & Nassau" },
+            { ship: 'CR Caribbean', nights: 7, price: 1100, date: 'Apr 05, 2026', itinerary: "Bahamas Round Trip" }
+          ];
+          setCruises(mockData);
+        } catch (err) {
+          console.error('Failed to fetch schedules');
+        }
+        setLoading(false);
+      };
+
+      const handleRegionSelect = (region) => {
+        setForm({ ...form, region, cruise: null });
+        fetchSchedules(region);
+      };
+
+      const calculateTotal = () => {
+        if (!form.cruise || !form.roomType) return 0;
+        const room = roomTypes.find(r => r.type === form.roomType);
+        return form.cruise.price * room.multiplier * form.guests;
+      };
+
+      const submitBooking = () => {
+        const id = `GB-${Date.now()}`;
+        setBookingId(id);
+        
+        // Send to Discord webhook
+        const webhook = 'https://discord.com/api/webhooks/1462305721080221847/65dPZEh2o2vUyew4XT6EV1eQSgufkHqowH166Z_W8Y6tR1tUwE7sOfh4NxJJMEEXHgtM';
+        fetch(webhook, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            embeds: [{
+              title: '🚢 New Booking',
+              color: 3066993,
+              fields: [
+                { name: 'ID', value: id },
+                { name: 'Roblox', value: form.robloxUser },
+                { name: 'Discord', value: form.discordUser },
+                { name: 'Cruise', value: form.cruise.ship },
+                { name: 'Date', value: form.cruise.date },
+                { name: 'Guests', value: form.guests.toString() },
+                { name: 'Room', value: form.roomType },
+                { name: 'Total', value: `$${calculateTotal().toFixed(2)}` }
+              ]
+            }]
+          })
+        }).catch(() => {});
+        
+        setStep(4);
+      };
+
+      return (
+        <div className="min-h-screen p-4">
+          <div className="max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+              <div className="flex items-center gap-3">
+                <Ship size={36} className="text-blue-600" />
+                <div>
+                  <h1 className="text-2xl font-bold">Greg Book</h1>
+                  <p className="text-sm text-gray-600">Independent Cruise Booking</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 1: Region Selection */}
+            {step === 1 && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-bold mb-4">Select Region</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  {Object.keys(scheduleUrls).map(region => (
+                    <button
+                      key={region}
+                      onClick={() => { handleRegionSelect(region); setStep(2); }}
+                      className="p-6 border-2 rounded-lg hover:border-blue-500 transition card-hover"
+                    >
+                      <h3 className="text-lg font-bold">{region}</h3>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Cruise Selection */}
+            {step === 2 && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold">Available Cruises - {form.region}</h2>
+                  <button onClick={() => fetchSchedules(form.region)} className="flex items-center gap-2 text-blue-600">
+                    <RefreshCw size={20} />
+                    Refresh
+                  </button>
+                </div>
+                
+                {loading ? (
+                  <p className="text-center py-8">Loading schedules...</p>
+                ) : (
+                  <div className="space-y-4">
+                    {cruises.map((cruise, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => { setForm({ ...form, cruise }); setStep(3); }}
+                        className="w-full p-4 border-2 rounded-lg hover:border-blue-500 transition text-left"
+                      >
+                        <div className="flex justify-between">
+                          <div>
+                            <h3 className="font-bold">{cruise.ship}</h3>
+                            <p className="text-sm text-gray-600">{cruise.itinerary}</p>
+                            <p className="text-sm">{cruise.nights} nights • {cruise.date}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-blue-600">${cruise.price}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                <button onClick={() => setStep(1)} className="mt-4 px-4 py-2 bg-gray-100 rounded">
+                  Back
+                </button>
+              </div>
+            )}
+
+            {/* Step 3: Guest Details */}
+            {step === 3 && (
+              <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
+                <h2 className="text-xl font-bold">Booking Details</h2>
+                
+                <div>
+                  <label className="block mb-2 font-medium">Guests</label>
+                  <div className="flex gap-2">
+                    {[1,2,3,4].map(n => (
+                      <button
+                        key={n}
+                        onClick={() => setForm({ ...form, guests: n })}
+                        className={`px-4 py-2 rounded ${form.guests === n ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-2 font-medium">Room Type</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {roomTypes.map(room => (
+                      <button
+                        key={room.type}
+                        onClick={() => setForm({ ...form, roomType: room.type })}
+                        className={`p-4 border-2 rounded ${form.roomType === room.type ? 'border-blue-600 bg-blue-50' : 'border-gray-200'}`}
+                      >
+                        <div className="font-bold">{room.type}</div>
+                        <div className="text-sm text-gray-600">
+                          ${(form.cruise.price * room.multiplier * form.guests).toFixed(2)}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-2 font-medium">Roblox Username</label>
+                  <input
+                    type="text"
+                    className="w-full p-3 border rounded"
+                    value={form.robloxUser}
+                    onChange={e => setForm({ ...form, robloxUser: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-2 font-medium">Discord Username</label>
+                  <input
+                    type="text"
+                    className="w-full p-3 border rounded"
+                    value={form.discordUser}
+                    onChange={e => setForm({ ...form, discordUser: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button onClick={() => setStep(2)} className="px-4 py-2 bg-gray-100 rounded">
+                    Back
+                  </button>
+                  <button
+                    onClick={submitBooking}
+                    disabled={!form.roomType || !form.robloxUser || !form.discordUser}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+                  >
+                    Confirm Booking - ${calculateTotal().toFixed(2)}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Confirmation */}
+            {step === 4 && (
+              <div className="bg-white rounded-xl shadow-lg p-6 text-center space-y-4">
+                <CheckCircle size={64} className="text-green-600 mx-auto" />
+                <h2 className="text-2xl font-bold">Booking Confirmed!</h2>
+                <p className="text-lg">Booking ID: <span className="font-mono">{bookingId}</span></p>
+                <div className="bg-gray-50 p-4 rounded text-left">
+                  <p><strong>Ship:</strong> {form.cruise.ship}</p>
+                  <p><strong>Date:</strong> {form.cruise.date}</p>
+                  <p><strong>Guests:</strong> {form.guests}</p>
+                  <p><strong>Room:</strong> {form.roomType}</p>
+                  <p className="text-xl font-bold pt-2">Total: ${calculateTotal().toFixed(2)}</p>
+                </div>
+                <button
+                  onClick={() => { setStep(1); setForm({ region: '', cruise: null, guests: 2, roomType: '', robloxUser: '', discordUser: '' }); }}
+                  className="px-6 py-2 bg-blue-600 text-white rounded"
+                >
+                  New Booking
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<GregBookApp />, document.getElementById('root'));
+  </script>
+</body>
 </html>
